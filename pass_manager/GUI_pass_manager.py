@@ -10,6 +10,8 @@ from PySide2.QtGui import QIcon
 
 login_class = user_login.login_auth()
 database = None
+
+# Permite imprimir informacion para debugging en la terminal.
 DEBUG = False
 
 class GUI_Login(QDialog):

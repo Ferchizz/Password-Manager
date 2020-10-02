@@ -1,7 +1,10 @@
 import sqlite3
 import os
 
-
+"""
+Esta clase se utiliza para acceder a la base de datos users.db.
+Provee funciones para manipular la base de datos.
+"""
 class Database():
     DIRECTORY = 'files'
 

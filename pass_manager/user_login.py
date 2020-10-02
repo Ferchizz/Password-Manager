@@ -6,11 +6,16 @@ from dbConnection import Database
 import cryptoHandler
 
 db_instance = None
+
+# Permite imprimir informacion para debugging en la terminal.
 DEBUG = False
 
 class login_auth():
     DIRECTORY = 'files'
 
+    '''
+    Crea la base de datos en DIRECTORY/users.db si no existe
+    '''
     def __init__(self):
         filename = os.path.join(self.DIRECTORY, 'users.db')
         if not os.path.isfile(filename):
@@ -18,6 +23,18 @@ class login_auth():
                 os.makedirs(self.DIRECTORY)
             self.createUserDB(filename)
 
+    '''
+    Recibe un nombre de usuario y contraseña para iniciar sesión.
+    Busca la informacion del usuario en la db y obtiene la salt, 
+    el agoritmo de cifrado utilizado por el usuario y su db cifrada.
+
+    Deriva una clave secreta para el usuario e inicia una instancia de la 
+    clase db_wrapper, la cual intenta descifrar la db utilizando la clave
+    derivada.
+
+    Retorna True si se pudo descifrar la base de datos.
+    Retorna Falso en caso contrario.
+    '''
     def tryLogin(self, username, passwd):
         global db_instance
         username = username
@@ -41,6 +58,14 @@ class login_auth():
                     return True
         return False
 
+    '''
+    Crea un nuevo usuario e inicia instancia de la clase db_wrapper
+
+    Retorna una tupla (boolean, string), donde el primer elemento es True si
+    se pudo crear el usuario, caso contrario, el segundo elemento informa el error.
+    
+    cipher: 0 = AES, 1 = ChaCha20
+    '''
     def createUser(self, name, username, passwd, cipher):
         global db_instance
         username = username
@@ -74,15 +99,19 @@ class login_auth():
 
         return not (length_error)
 
+
+    """
+    Comprueba que la contraseña elegida cumpla los requisitos mínimos.
+
+    A password is considered strong if it has at least:
+        8 characters length
+        1 digit
+        1 symbol
+        1 uppercase letter
+        1 lowercase letter
+    """
     def isStrongPasswd(self, passwd):
-        """
-        A password is considered strong if it has at least:
-            8 characters length
-            1 digit
-            1 symbol
-            1 uppercase letter
-            1 lowercase letter
-        """
+
 
         length_error = len(passwd) < 8
         digit_error = re.search(r"\d", passwd) is None

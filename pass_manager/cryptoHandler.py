@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from cryptography.hazmat.backends import default_backend
 
+# Permite imprimir informacion para debugging en la terminal.
 DEBUG = False
 
 class db_wrapper():
@@ -13,6 +14,11 @@ class db_wrapper():
     c = None
     valid = False
 
+    '''
+    Recibe la clave derivada y la db cifrada.
+
+    Crea base de datos en memoria para cargar los datos luego de descifrarla.
+    '''
     def __init__(self, username, derivated_key, cipher, db_encrypted):
         self.derivated_key = derivated_key
         self.username = username
@@ -51,6 +57,11 @@ class db_wrapper():
         self.conn.commit()
         self.encript_and_save()
 
+    '''
+    Recibe la base de datos descifrada en formato bytes, la cual consiste 
+    de una coleccion de operaciones SQL que son ejecutadas para recrear 
+    la base de datos que fue previamente inicializada en memoria.
+    '''
     def loadDatabase(self, database):
         db = database.decode('UTF-8')
         operaciones = db.split('\n')
@@ -59,20 +70,26 @@ class db_wrapper():
                 self.c.execute(op)
                 self.conn.commit()
 
+    '''
+    Obtiene un volcado de la base de datos en memoria y se lo encripta 
+    utilizando el algoritmo de cifrado elegido por el usuario. 
+
+    Se contatena parametros necesarios utilizados por los algoritmos.
+    '''
     def encript_and_save(self):
         database = "\n".join(self.conn.iterdump())
         database = str.encode(database)
 
         # 0 = AES, 1= ChaCha20
         if self.cipher == 0:
-            iv, ciphertext, tag = self.encryptAES(database, b"associated_data")
+            iv, ciphertext, tag = self.encryptAES(database, str.encode(self.username))
 
             # Store encrypted db and append IV + tag
             with Database('users.db') as db:
                 db.updateEncrypted(self.username, ciphertext + iv + tag)
         else:
             nonce, ciphertext = self.encryptChaCha20(
-                database, b"associated_data")
+                database, str.encode(self.username))
 
             # Store encrypted db and append nonce
             with Database('users.db') as db:
@@ -99,7 +116,7 @@ class db_wrapper():
         plaintext = None
         try:
             # Decrypt the cyphertext and get the associated plaintext.
-            plaintext = chacha.decrypt(nonce, ct, b"associated_data")
+            plaintext = chacha.decrypt(nonce, ct, str.encode(self.username))
         except:
             pass
 
@@ -156,7 +173,7 @@ class db_wrapper():
         ).decryptor()
 
         # We put associated_data back in or the tag will fail to verify when we finalize the decryptor.
-        decryptor.authenticate_additional_data(b"associated_data")
+        decryptor.authenticate_additional_data(str.encode(self.username))
 
         plaintext_database = None
         try:
