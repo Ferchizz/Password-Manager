@@ -131,13 +131,28 @@ class GUI_Create(QDialog):
         if len(name) == 0 or len(username) == 0 or len(password) == 0:
             return
 
-        val, err = login_class.createUser(name, username, password, cipher)
-        if not val:
+        err = login_class.createUser(name, username, password, cipher)
+        if err != 0:
             alert = QMessageBox()
             alert.setIcon(QMessageBox.Warning)
-            alert.setText(err)
-            alert.setInformativeText(
-                "El nombre de usuario debe tener mínimo 6 caracteres.")
+            if err == 1:
+                alert.setText('El usuario ya existe')
+                alert.setInformativeText(
+                    "Elija otro nombre de usuario.")
+            elif err == 2:
+                alert.setText('Nombre de usuario inválido')
+                alert.setInformativeText(
+                    "El nombre de usuario debe tener mínimo 6 caracteres.")
+            elif err == 3:
+                alert.setText('Contraseña inválida')
+                alert.setInformativeText(
+                    '''La contraseña elegida no cumple los requisitos mínimos. 
+                    8 Carácteres
+                    1 Dígito
+                    1 Símbolo (.@$!%*#?&)
+                    1 Letra mayuscúscula
+                    1 Letra minúscula
+                    ''')
             alert.setStandardButtons(QMessageBox.Ok)
             alert.exec_()
         else:

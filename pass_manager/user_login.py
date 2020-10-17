@@ -61,8 +61,11 @@ class login_auth():
     '''
     Crea un nuevo usuario e inicia instancia de la clase db_wrapper
 
-    Retorna una tupla (boolean, string), donde el primer elemento es True si
-    se pudo crear el usuario, caso contrario, el segundo elemento informa el error.
+    returns:
+    0: No hay errores
+    1: 'El usuario ya existe'
+    2: 'Nombre de usuario inválido'
+    3: 'Contraseña inválida'
     
     cipher: 0 = AES, 1 = ChaCha20
     '''
@@ -70,11 +73,11 @@ class login_auth():
         global db_instance
         username = username
         if self.existUser(username):
-            return (False, 'User already exists!')
+            return 1
         if not self.isValidUsername(username):
-            return (False, 'Username is invalid!')
+            return 2
         if not self.isStrongPasswd(passwd):
-            return (False, 'Password is invalid!')
+            return 3
 
         # Generate argon2 hash
         salt = os.urandom(16)
@@ -92,7 +95,7 @@ class login_auth():
 
         db_instance = cryptoHandler.db_wrapper(username, derivated_key, cipher, "")
 
-        return (True, '')
+        return 0
 
     def isValidUsername(self, user):
         length_error = len(user) < 6
@@ -106,7 +109,7 @@ class login_auth():
     A password is considered strong if it has at least:
         8 characters length
         1 digit
-        1 symbol
+        1 symbol (.@$!%*#?&)
         1 uppercase letter
         1 lowercase letter
     """
